@@ -1,16 +1,11 @@
 {
   "controllers": null,
-  "reconnect": {
-    "start_delay": 1000,
-    "max_delay": 60000,
-    "multiplier": 2
-  },
-  "context": {
+  "config": {
     "protocol": "amqp",
     "username": "guest",
     "password": "guest",
     "host": "127.0.0.1",
-    "port": false,
+    "port": 5555,
     "url": false
   }
 }
