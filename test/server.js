@@ -137,4 +137,32 @@ describe('server', () => {
       })
     });
   });
+
+  describe('scale', () =>{
+    it('should handle concurrent requests', function (done) {
+      this.timeout(5000);
+      let count = 100;
+      let errors = 0;
+      let app = zeromatter();
+      app.use(function () {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            this.response = this.data;
+            resolve();
+          }, 1000);
+        });
+      });
+      let fin = (e) => {
+        app.close();
+        done(e)
+      }
+      app.listen();
+      for (let i = 0; i < count; i++) {
+        zquest({ data: i }).then((res) => {
+          expect(res).to.equal(`${i}`);
+          if (i+1 === count) fin();
+        }).catch(fin);
+      }
+    });
+  });
 });
