@@ -11,19 +11,24 @@ const Zeromatter = require('../lib');
 let app = Zeromatter();
 
 app.use(function *(next) {
-  console.log('  --> 1');
-  yield next;
-  console.log('  <-- 1');
+  this.shortId = this.id.split('-')[0];
+  console.log(`[${this.shortId}] --> `);
+  yield next();
+  console.log(`[${this.shortId}] <--`);
+});
+
+app.use(function *(next) {
+console.log(`[${this.shortId}] ----> `);
+yield next();
+console.log(`[${this.shortId}] <----`);
 });
 
 app.use(function *() {
-  console.log('  --> 2');
-  yield next;
-  console.log('  <-- 2');
-});
-
-app.use(function *() {
-  console.log(this.message);
+  console.log(`[${this.shortId}]   ${this.message}`);
+  this.response = {
+    text: 'Hello World!',
+    echo: this.data
+  }
 });
 
 app.listen();
@@ -40,7 +45,11 @@ zquest({
 }).then((res) => {
   console.log('RETURNED: ', res);
   app.close();
+  zquest.close();
+  process.exit();
 }).catch((e) => {
   console.log(e)
   app.close();
+  zquest.close();
+  process.exit();
 });

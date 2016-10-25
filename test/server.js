@@ -139,9 +139,14 @@ describe('server', () => {
   });
 
   describe('error handling', () => {
-    it('should bubble errors up the stack', function *(done) {
+    it('should bubble errors up the stack (generator)', (done) => {
       let app = zeromatter();
-      let noop = function *(next) { yield next(); }
+      let noop = function *(next) { yield next(); };
+      let fin = (e) => {
+        app.close();
+        zquest.close();
+        done(e);
+      }
       app.use(function *(next) {
         let error = false;
         try { yield next() } catch(e) {
@@ -154,14 +159,85 @@ describe('server', () => {
       app.use(noop);
       app.use(function *() { throw Error('ERROR'); });
       app.listen();
-      yield zquest({ data: 'test' });
-      app.close();
-      zquest.close()
-      done()
+      zquest({
+        data: 'test'
+      }).then((rep) => fin()).catch(fin);
     });
 
-    it('should reply with a defualt error handler', function *(done) {
+    it('should bubble errors up the stack (promise)', (done) => {
+      let error = false;
+      let fin = (e, r) => {
+        app.close();
+        zquest.close();
+        expect(error).to.not.be.false;
+        expect(r).to.equal('CAUGHT');
+        done(e);
+      }
+      let app = zeromatter();
+      let noop = function (next) {
+        return new Promise((resolve, reject) => { next().then(resolve).catch(reject); });
+      };
+      app.use(function (next) {
+        return new Promise((resolve, reject) => {
+          next().then(resolve).catch((e) => {
+            error = e;
+            this.response = 'CAUGHT';
+            resolve();
+          });
+        });
+      });
+      app.use(noop);
+      app.use(noop);
+      app.use(noop);
+      app.use(function () { return new Promise((resolve, reject) => reject(Error('ERROR'))); });
+      app.listen();
+      zquest({
+        data: 'test'
+      }).then((rep) => fin(null, rep)).catch(fin);
+    });
 
+    it('should have a default error handler (generator)', (done) => {
+      let app = zeromatter();
+      let fin = (e, r) => {
+        app.close();
+        zquest.close();
+        expect(r).to.equal('Internal server error');
+        done(e);
+      }
+      app.use(function *() { throw Error('ERROR'); });
+      app.listen();
+      zquest({
+        data: 'test'
+      }).then((rep) => fin(null, rep)).catch(fin);
+    });
+
+    it('should have a default error handler (promise)', (done) => {
+      let app = zeromatter();
+      let fin = (e, r) => {
+        app.close();
+        zquest.close();
+        expect(r).to.equal('Internal server error');
+        done(e);
+      }
+      app.use(function () { return new Promise((resolve, reject) => reject(Error('ERROR'))); });
+      app.listen();
+      zquest({
+        data: 'test'
+      }).then((rep) => fin(null, rep)).catch(fin);
+    });
+
+    it('should have a default unhandled message', (done) => {
+      let app = zeromatter();
+      let fin = (e, r) => {
+        app.close();
+        zquest.close();
+        expect(r).to.equal('Not processed');
+        done(e);
+      }
+      app.listen();
+      zquest({
+        data: 'test'
+      }).then((rep) => fin(null, rep)).catch(fin);
     });
   });
 
