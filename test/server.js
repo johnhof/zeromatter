@@ -138,7 +138,34 @@ describe('server', () => {
     });
   });
 
-  describe('scale', () =>{
+  describe('error handling', () => {
+    it('should bubble errors up the stack', function *(done) {
+      let app = zeromatter();
+      let noop = function *(next) { yield next(); }
+      app.use(function *(next) {
+        let error = false;
+        try { yield next() } catch(e) {
+          error = e;
+        }
+        expect(error).to.not.be.false;
+      });
+      app.use(noop);
+      app.use(noop);
+      app.use(noop);
+      app.use(function *() { throw Error('ERROR'); });
+      app.listen();
+      yield zquest({ data: 'test' });
+      app.close();
+      zquest.close()
+      done()
+    });
+
+    it('should reply with a defualt error handler', function *(done) {
+
+    });
+  });
+
+  describe('scale', () => {
     it('should handle concurrent requests', function (done) {
       this.timeout(5000);
       let count = 100;
