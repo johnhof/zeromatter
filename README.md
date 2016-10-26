@@ -74,6 +74,10 @@ app.listen();
 - [Documentation](#)
   - [Defaults](#defaults)
   - [`zeromatter(opts)`](#zeromatteropts)
+  - [`app.use(func)`](#appfunc)
+  - [`app.useAll(func)`](#appfunc)
+  - [`app.listen(opts)`](#appopts)
+  - [`app.close()`](#appclose)
 
 
 ## Documentation
@@ -91,3 +95,110 @@ defaults used by zeromatter
 ```
 
 ### zeromatter(opts)
+
+- Application builder
+- Accepts
+  - Object to override [defaults](#defaults)
+- Returns
+  - instance of zeromatter
+
+```javascript
+let app = zeromatter({
+  host: 'localhost',
+  port: '1991'
+});
+```
+
+### app.use(func)
+
+- Push middleware function onto the chain of execution
+- Accepts
+  - Promise || Generator
+    - Accept promise `next` representing the next step in the middleware
+    - Errors or rejecting a promise will bubble up the middleware
+    - The value of `this.response` when the final promise is resolved will be the value returned to the client
+    - The context of `this` is an instance of [Message](https://github.com/johnhof/zeromatter/blob/master/lib/zeromatter/message.js)
+
+```javascript
+app.use(function *(next) {
+  console.log(this);
+  // {
+  //   message: String || Object // message content, parsed if json. aliases: body, data
+  //   data: String || Object // // message content, parsed if json. aliases: message, data
+  //   body: String || Object // // message content, parsed if json. aliases: body, message
+  //   id: String // request UUID
+  //   raw: Buffer // encoded buffer content of the message
+  //   res: String || Object // Value to be stringified and sent to the client. alias: response
+  //   response: String || Object // Value to be stringified and sent to the client. alias res
+  // }
+
+  yield next();
+  this.response = this.response || 'Hello World!';
+});
+
+// OR
+
+app.use(function (next) {
+  return new Promise((resolve, reject) => {
+    console.log(this);
+    // {
+    //   message: String || Object // message content, parsed if json. aliases: body, data
+    //   data: String || Object // message content, parsed if json. aliases: message, data
+    //   body: String || Object // message content, parsed if json. aliases: body, message
+    //   id: String // request UUID
+    //   raw: Buffer // encoded buffer content of the message
+    //   res: String || Object // Value to be stringified and sent to the client. alias: response
+    //   response: String || Object // Value to be stringified and sent to the client. alias res
+    // }
+
+    yield next().then(() => {
+      this.response = this.response || 'Hello World!';
+      resolve();
+    }).catch(reject);
+  });
+});
+```
+
+### app.use(func)
+
+- Push array of middleware function onto the chain of execution
+- Accepts
+  - Array of functions to be passed to [app.use(func)](appusefunc)
+
+```javascript
+app.use([
+  function *(next) { yield next(); },
+  function *(next) { yield next(); },
+  function (next) {
+    return new Promise((resolve, reject) => {
+      this.response = 'Hello World';
+      resolve();
+    });
+  }
+])
+```
+
+### app.listen(opts)
+
+- Bind the server and listen for messages
+- Accepts
+  - Object to override [defaults](#defaults)
+
+```javascript
+app.listen({
+  host: 'localhost',
+  port: '1991'
+});
+```
+
+### app.close()
+
+- Close the bound socket
+
+```javascript
+app.close();
+```
+
+## Authors
+
+- [John Hofrichter](https://github.com/johnhof)
