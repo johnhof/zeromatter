@@ -75,7 +75,7 @@ app.listen();
   - [Defaults](#defaults)
   - [`zeromatter(opts)`](#zeromatteropts)
   - [`app.use(func)`](#appfunc)
-  - [`app.useAll(func)`](#appfunc)
+  - [`app.useAll(func)`](#appuseallfunc)
   - [`app.listen(opts)`](#appopts)
   - [`app.close()`](#appclose)
 
