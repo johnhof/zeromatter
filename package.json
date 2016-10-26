@@ -1,6 +1,6 @@
 {
   "name": "zeromatter",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "ZeroMQ req-rep server framework",
   "main": "lib",
   "scripts": {
@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/johnhof/zeromatter#readme",
   "dependencies": {
+    "co": "^4.6.0",
     "comise": "^1.0.1",
     "lodash": "^4.16.3",
     "zmq": "^2.15.3"
