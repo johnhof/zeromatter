@@ -159,14 +159,14 @@ app.use(function (next) {
 });
 ```
 
-### app.use(func)
+### app.useAll(func)
 
 - Push array of middleware function onto the chain of execution
 - Accepts
   - Array of functions to be passed to [app.use(func)](appusefunc)
 
 ```javascript
-app.use([
+app.useAll([
   function *(next) { yield next(); },
   function *(next) { yield next(); },
   function (next) {
