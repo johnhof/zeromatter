@@ -18,18 +18,18 @@ Zeromatter is influenced heavily by the [koa](http://koajs.com/) framework, and 
 let zeromatter = require('zeromatter');
 let app = zeromatter();
 
-app.use(function *(next) {
-  this.shortId = this.id.split('-')[0];
-  console.log(`[${this.shortId}] --> `);
+app.use(function *(ctx, next) {
+  ctx.shortId = ctx.id.split('-')[0];
+  console.log(`[${ctx.shortId}] --> `);
   yield next();
-  console.log(`[${this.shortId}] <--`);
+  console.log(`[${ctx.shortId}] <--`);
 });
 
-app.use(function *() {
-  console.log(`[${this.shortId}]   ${this.message}`);
-  this.response = {
+app.use(function *(ctx) {
+  console.log(`[${ctx.shortId}]   ${ctx.message}`);
+  ctx.response = {
     text: 'Hello World!',
-    echo: this.data
+    echo: ctx.data
   }
 });
 
@@ -41,24 +41,21 @@ app.listen();
 ```javascript
 let app = Zeromatter();
 
-app.use(function (next) {
-  return new Promise((resolve, reject) => {
-    this.shortId = this.id.split('-')[0];
-    console.log(`[${this.shortId}] --> `);
-    next().then(() => {
-      console.log(`[${this.shortId}] <--`)
-      resolve();
-    }).catch(reject);
+app.use((ctx, next) => {
+  ctx.shortId = ctx.id.split('-')[0];
+  console.log(`[${ctx.shortId}] --> `);
+  return next().then(() => {
+    console.log(`[${ctx.shortId}] <--`);
   });
 });
 
 app.use(function () {
   return new Promise((resolve, reject) => {
-    console.log(`[${this.shortId}]   ${this.message}`);
-    this.response = {
+    console.log(`[${ctx.shortId}]   ${ctx.message}`);
+    ctx.response = {
       text: 'Hello World!',
-      echo: this.data
-    }
+      echo: ctx.data
+    };
     resolve();
   });
 });
@@ -113,14 +110,14 @@ let app = zeromatter({
 
 - Push middleware function onto the chain of execution
 - Accepts
-  - Promise || Generator
+  - Generator || Function returning Promise
     - Accept promise `next` representing the next step in the middleware
     - Errors or rejecting a promise will bubble up the middleware
-    - The value of `this.response` when the final promise is resolved will be the value returned to the client
-    - The context of `this` is an instance of [Message](https://github.com/johnhof/zeromatter/blob/master/lib/zeromatter/message.js)
+    - The value of `ctx.response` when the final promise is resolved will be the value returned to the client
+    - The context of `ctx` is an instance of [Message](https://github.com/johnhof/zeromatter/blob/master/lib/zeromatter/message.js)
 
 ```javascript
-app.use(function *(next) {
+app.use(function *(ctx, next) {
   console.log(this);
   // {
   //   message: String || Object // message content, parsed if json. aliases: body, data
@@ -138,7 +135,7 @@ app.use(function *(next) {
 
 // OR
 
-app.use(function (next) {
+app.use(function (ctx, next) {
   return new Promise((resolve, reject) => {
     console.log(this);
     // {
@@ -151,7 +148,7 @@ app.use(function (next) {
     //   response: String || Object // Value to be stringified and sent to the client. alias res
     // }
 
-    yield next().then(() => {
+    next().then(() => {
       this.response = this.response || 'Hello World!';
       resolve();
     }).catch(reject);
@@ -167,9 +164,9 @@ app.use(function (next) {
 
 ```javascript
 app.useAll([
-  function *(next) { yield next(); },
-  function *(next) { yield next(); },
-  function (next) {
+  function *(ctx, next) { yield next(); },
+  function *(ctx, next) { yield next(); },
+  function (ctx, next) {
     return new Promise((resolve, reject) => {
       this.response = 'Hello World';
       resolve();

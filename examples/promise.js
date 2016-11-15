@@ -10,37 +10,25 @@ const Zeromatter = require('../lib');
 
 let app = Zeromatter();
 
-app.use(function (next) {
-  return new Promise((resolve, reject) => {
-    this.shortId = this.id.split('-')[0];
-    console.log(`[${this.shortId}] --> `);
-    next().then(() => {
-      console.log(`[${this.shortId}] <--`)
-      resolve();
-    }).catch(reject);
-  });
+app.use((ctx, next) => {
+  ctx.shortId = ctx.id.split('-')[0];
+  console.log(`[${ctx.shortId}] --> `);
+  return next().then(() => console.log(`[${ctx.shortId}] <--`));
 });
 
-app.use(function (next) {
-  return new Promise((resolve, reject) => {
-    console.log(`[${this.shortId}] ----> `);
-    next().then(() => {
-      console.log(`[${this.shortId}] <----`)
-      resolve();
-    }).catch(reject);
-  });
+app.use((ctx, next) => {
+  console.log(`[${ctx.shortId}] ----> `);
+  return next().then(() => console.log(`[${ctx.shortId}] <----`));
 });
 
-app.use(function () {
-  return new Promise((resolve, reject) => {
-    console.log(`[${this.shortId}]   ${this.message}`);
-    this.response = {
-      text: 'Hello World!',
-      echo: this.data
-    }
-    resolve();
-  });
-});
+app.use((ctx, next) => new Promise((resolve, reject) => {
+  console.log(`[${ctx.shortId}]   ${ctx.message}`);
+  ctx.response = {
+    text: 'Hello World!',
+    echo: ctx.data
+  }
+  resolve();
+}));
 
 app.listen();
 

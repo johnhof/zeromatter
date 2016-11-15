@@ -55,8 +55,8 @@ describe('server', () => {
         let i = 0;
         let o = 0;
         let app = zeromatter();
-        app.use(function *(next) { i++; yield next(); o++; });
-        app.use(function *() { i++; this.response = expected; o++; });
+        app.use(function *test1(ctx, next) { i++; yield next(); o++; });
+        app.use(function *test2(ctx) { i++; ctx.response = expected; o++; });
         app.listen();
         let res = yield zquest({ data: 'TEST' });
         expect(i).to.equal(2);
@@ -64,24 +64,15 @@ describe('server', () => {
         expect(res).to.equal(expected);
         app.close();
       })
-
       it('should allow addition of a promise', function *() {
         let expected = 'test';
         let i = 0;
         let o = 0;
         let app = zeromatter();
-        app.use(function (next) {
-          return new Promise((resolve, reject) => {
-            i++; next().then(() => {
-              o++; resolve();
-            });
-          });
-        });
-        app.use(function () {
-          return new Promise((resolve, reject) => {
-            i++; this.response = expected; o++; resolve();
-          });
-        });
+        app.use((ctx, next) =>  { i++; return next().then(() => o++);});
+        app.use((ctx) => new Promise((resolve, reject) => {
+          i++; ctx.response = expected; o++; resolve();
+        }));
         app.listen();
         let res = yield zquest({ data: 'TEST' });
         expect(i).to.equal(2);
@@ -98,8 +89,8 @@ describe('server', () => {
         let o = 0;
         let app = zeromatter();
         app.useAll([
-          function *(next) { i++; yield next(); o++; },
-          function *() { i++; this.response = expected; o++; }
+          function *(ctx, next) { i++; yield next(); o++; },
+          function *(ctx) { i++; ctx.response = expected; o++; }
         ]);
         app.listen();
         let res = yield zquest({ data: 'TEST' });
@@ -115,18 +106,10 @@ describe('server', () => {
         let o = 0;
         let app = zeromatter();
         app.useAll([
-          function (next) {
-            return new Promise((resolve, reject) => {
-              i++; next().then(() => {
-                o++; resolve();
-              });
-            });
-          },
-          function () {
-            return new Promise((resolve, reject) => {
-              i++; this.response = expected; o++; resolve();
-            });
-          }
+          (ctx, next) => { i++; return next().then(() => o++); },
+          (ctx) => new Promise((resolve, reject) => {
+            i++; ctx.response = expected; o++; resolve();
+          })
         ]);
         app.listen();
         let res = yield zquest({ data: 'TEST' });
@@ -174,22 +157,15 @@ describe('server', () => {
         done(e);
       }
       let app = zeromatter();
-      let noop = function (next) {
-        return new Promise((resolve, reject) => { next().then(resolve).catch(reject); });
-      };
-      app.use(function (next) {
-        return new Promise((resolve, reject) => {
-          next().then(resolve).catch((e) => {
-            error = e;
-            this.response = 'CAUGHT';
-            resolve();
-          });
-        });
-      });
+      let noop = (ctx, next) => next();
+      app.use((ctx, next) => next().catch((e) => {
+        error = e;
+        ctx.response = 'CAUGHT';
+      }));
       app.use(noop);
       app.use(noop);
       app.use(noop);
-      app.use(function () { return new Promise((resolve, reject) => reject(Error('ERROR'))); });
+      app.use(() => new Promise((res, rej) => rej(Error('ERROR'))));
       app.listen();
       zquest({
         data: 'test'

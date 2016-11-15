@@ -10,24 +10,24 @@ const Zeromatter = require('../lib');
 
 let app = Zeromatter();
 
-app.use(function *(next) {
-  this.shortId = this.id.split('-')[0];
-  console.log(`[${this.shortId}] --> `);
+app.use(function *(ctx, next) {
+  ctx.shortId = ctx.id.split('-')[0];
+  console.log(`[${ctx.shortId}] --> `);
   yield next();
-  console.log(`[${this.shortId}] <--`);
+  console.log(`[${ctx.shortId}] <--`);
 });
 
-app.use(function *(next) {
-console.log(`[${this.shortId}] ----> `);
+app.use(function *(ctx, next) {
+console.log(`[${ctx.shortId}] ----> `);
 yield next();
-console.log(`[${this.shortId}] <----`);
+console.log(`[${ctx.shortId}] <----`);
 });
 
-app.use(function *() {
-  console.log(`[${this.shortId}]   ${this.message}`);
-  this.response = {
+app.use(function *(ctx) {
+  console.log(`[${ctx.shortId}]   ${ctx.message}`);
+  ctx.response = {
     text: 'Hello World!',
-    echo: this.data
+    echo: ctx.data
   }
 });
 
